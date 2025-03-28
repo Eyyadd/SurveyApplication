@@ -16,28 +16,28 @@ namespace Survey.Infrastructure.implementation.Service
     {
         private readonly IGenericRepository<Poll> _pollRepo = PollRepo;
 
-        public async Task<int> AddAsync(PollRequest entity)
+        public async Task<int> AddAsync(PollRequest entity, CancellationToken cancellationToken)
         {
             var Poll = entity.Adapt<Poll>();
-            var result = await _pollRepo.Add(Poll);
+            var result = await _pollRepo.Add(Poll, cancellationToken);
             return result;
         }
 
-        public async Task<int> DeleteAsync(int id)
+        public async Task<int> DeleteAsync(int id , CancellationToken cancellationToken)
         {
-            var PollIsExist = await _pollRepo.IsExist(id);
+            var PollIsExist = await _pollRepo.IsExist(id, cancellationToken);
             if (PollIsExist)
             {
-                var oldPoll = await _pollRepo.GetById(id);
-                return await _pollRepo.Delete(oldPoll);
+                var oldPoll = await _pollRepo.GetById(id, cancellationToken);
+                return await _pollRepo.Delete(oldPoll, cancellationToken);
             }
             return 0;
 
         }
 
-        public async Task<IEnumerable<PollResponse?>> GetAllAsync()
+        public async Task<IEnumerable<PollResponse?>> GetAllAsync(CancellationToken cancellationToken)
         {
-            var Polls = await _pollRepo.GetAll();
+            var Polls = await _pollRepo.GetAll(cancellationToken);
 
             if (Polls is null)
                 return null!;
@@ -47,9 +47,9 @@ namespace Survey.Infrastructure.implementation.Service
 
         }
 
-        public async Task<PollResponse?> GetByIdAsync(int id)
+        public async Task<PollResponse?> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
-            var poll = await _pollRepo.GetById(id);
+            var poll = await _pollRepo.GetById(id, cancellationToken);
 
             if (poll is null)
                 return null!;
@@ -58,14 +58,14 @@ namespace Survey.Infrastructure.implementation.Service
             return pollResponse;
         }
 
-        public async Task<PollResponse> UpdateAsync(int id, PollRequest entity)
+        public async Task<PollResponse> UpdateAsync(int id, PollRequest entity, CancellationToken cancellationToken)
         {
-            var pollIsExist = await _pollRepo.IsExist(id);
+            var pollIsExist = await _pollRepo.IsExist(id, cancellationToken);
 
             if (pollIsExist)
             {
                 var poll = entity.Adapt<Poll>();
-                var IsUpdated = await _pollRepo.Update(id,poll);
+                var IsUpdated = await _pollRepo.Update(id,poll, cancellationToken);
                 return IsUpdated  != 0 ? entity.Adapt<PollResponse>() : null!;
             }
             return null!;

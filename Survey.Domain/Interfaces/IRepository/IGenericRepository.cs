@@ -9,13 +9,13 @@ namespace Survey.Domain.Interfaces.IRepository
 {
     public interface IGenericRepository<T> where T : BaseEntity
     {
-        Task<IEnumerable<T>> GetAll();
-        Task<T> GetById(int id);
+        Task<IEnumerable<T>> GetAll(CancellationToken cancellationToken);
+        Task<T> GetById(int id, CancellationToken cancellationToken);
 
-        Task<int> Add(T entity);
-        Task<int> Update(int id,T entity);
-        Task<int> Delete(T entity);
+        Task<int> Add(T entity, CancellationToken cancellationToken);
+        Task<int> Update(int id,T entity, CancellationToken cancellationToken);
+        Task<int> Delete(T entity, CancellationToken cancellationToken);
 
-        Task<bool> IsExist(int id);
+        Task<bool> IsExist(int id, CancellationToken cancellationToken);
     }
 }
