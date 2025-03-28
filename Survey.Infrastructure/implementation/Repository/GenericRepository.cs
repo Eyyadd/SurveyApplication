@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Survey.Infrastructure.implementation.Repository
@@ -16,7 +17,7 @@ namespace Survey.Infrastructure.implementation.Repository
         public async Task<int> Add(T entity,CancellationToken cancellationToken)
         {
             _dbContext.Set<T>().Add(entity);
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await SaveChanges(cancellationToken);
 
             return entity.Id;
         }
@@ -24,7 +25,7 @@ namespace Survey.Infrastructure.implementation.Repository
         public async Task<int> Delete(T entity, CancellationToken cancellationToken)
         {
             _dbContext.Remove(entity);
-            return await _dbContext.SaveChangesAsync(cancellationToken);
+            return await SaveChanges(cancellationToken);
         }
 
         public async Task<IEnumerable<T>> GetAll(CancellationToken cancellationToken)
@@ -46,7 +47,12 @@ namespace Survey.Infrastructure.implementation.Repository
         {
             entity.Id = id;
             _dbContext.Update(entity);
-            return await _dbContext.SaveChangesAsync(cancellationToken);
+            return await SaveChanges(cancellationToken);
+        }
+
+        public async Task<int> SaveChanges(CancellationToken cancellation)
+        {
+            return await _dbContext.SaveChangesAsync(cancellation);
         }
     }
 }

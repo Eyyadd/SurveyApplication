@@ -17,5 +17,8 @@ namespace Survey.Domain.Interfaces.IRepository
         Task<int> Delete(T entity, CancellationToken cancellationToken);
 
         Task<bool> IsExist(int id, CancellationToken cancellationToken);
+
+
+        Task<int> SaveChanges(CancellationToken cancellation);
     }
 }

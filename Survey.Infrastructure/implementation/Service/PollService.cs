@@ -71,5 +71,18 @@ namespace Survey.Infrastructure.implementation.Service
             return null!;
 
         }
+
+        public async Task<bool> ToggleIsPublished(int id, CancellationToken cancellationToken)
+        {
+            var PollIsExist = await _pollRepo.IsExist(id, cancellationToken);
+            if (PollIsExist)
+            {
+                var Poll =  await _pollRepo.GetById(id, cancellationToken);
+                Poll.IsPublished = !Poll.IsPublished;
+               var result = await _pollRepo.SaveChanges(cancellationToken);
+                return true;
+            }
+            return false;
+        }
     }
 }

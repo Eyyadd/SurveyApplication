@@ -53,5 +53,12 @@ namespace Survey.API.Controllers
 
             return result == 1 ? Ok() : BadRequest();
         }
+
+        [HttpPut("{id}/Toggle-IsPublished")]
+        public async Task<IActionResult> ToggleIsPublished(int id,CancellationToken cancellationToken)
+        {
+            var result = await _PollService.ToggleIsPublished(id, cancellationToken);
+            return result ? NoContent() : NotFound();
+        }
     }
 }
