@@ -57,7 +57,7 @@ namespace Survey.API.Helper
 
         public static void RegisterFluentValidation(this IServiceCollection services)
         {
-            services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+            services.AddValidatorsFromAssembly(Assembly.Load("Survey.Infrastructure"));
             services.AddFluentValidationAutoValidation();
         }
 

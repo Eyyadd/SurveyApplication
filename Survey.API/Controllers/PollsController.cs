@@ -36,7 +36,7 @@ namespace Survey.API.Controllers
         {
             var result = await _PollService.AddAsync(entity, cancellationToken);
             
-            return result == 1 ? CreatedAtAction(nameof(GetById), new { id = result }, entity) : BadRequest();
+            return result != 0 ? CreatedAtAction(nameof(GetById), new { id = result }, entity) : BadRequest();
         }
 
         [HttpPut("{id}")]
