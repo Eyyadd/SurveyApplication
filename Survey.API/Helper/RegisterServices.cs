@@ -2,12 +2,16 @@
 using FluentValidation;
 using Mapster;
 using MapsterMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using Survey.Domain.Interfaces.IRepository;
 using Survey.Infrastructure.implementation.Repository;
 using Survey.Infrastructure.implementation.Service;
 using Survey.Infrastructure.IService;
 using System.Reflection;
+using System.Text;
 
 namespace Survey.API.Helper
 {
@@ -30,6 +34,10 @@ namespace Survey.API.Helper
             //custom-services
             services.AddServices();
 
+            //Authentication
+            services.AddAuthentication(configuration);
+
+
 
 
 
@@ -40,12 +48,44 @@ namespace Survey.API.Helper
         {
             services.AddScoped<IPollService, PollService>();
             services.AddScoped<IGenericRepository<Poll>, GenericRepository<Poll>>();
+            services.AddScoped<IAuthService,AuthService>();
+        }
+
+        public static void AddAuthentication(this IServiceCollection services,IConfiguration configuration)
+        {
+
+            var Key = configuration["JwtOptions:securityKey"];
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(options =>
+            {
+                options.SaveToken = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Key!)),
+                    ValidateLifetime = true,
+
+                    ValidateIssuer = true,
+                    ValidIssuer = configuration["JwtOptions:issuer"],
+
+                    ValidateAudience = true,
+                    ValidAudience = configuration["JwtOptions:audience"],
+                };
+
+            });
         }
 
         public static void DbContextConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             var connectionString = configuration.GetConnectionString("DefaultConnection");
             services.AddDbContext<SurveyDbContext>(options => options.UseSqlServer(connectionString));
+
+            services.AddIdentity<ApplicationUser, IdentityRole>()
+                .AddEntityFrameworkStores<SurveyDbContext>();
         }
 
         public static void MapsterConfiguration(this IServiceCollection services)

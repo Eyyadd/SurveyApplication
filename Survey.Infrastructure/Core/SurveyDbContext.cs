@@ -1,11 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Survey.Domain.Entities;
 using Survey.Infrastructure.Core.Configuration;
 using System.Reflection;
 
 namespace Survey.Infrastructure.Core
 {
-    public class SurveyDbContext : DbContext
+    public class SurveyDbContext : IdentityDbContext<ApplicationUser>
     {
         public SurveyDbContext(DbContextOptions<SurveyDbContext> options) : base(options) { }
 
