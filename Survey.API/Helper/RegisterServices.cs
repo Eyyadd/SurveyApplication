@@ -4,9 +4,11 @@ using Mapster;
 using MapsterMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using Survey.Domain.Interfaces.IRepository;
+using Survey.Infrastructure.DTOs.Auth;
 using Survey.Infrastructure.implementation.Repository;
 using Survey.Infrastructure.implementation.Service;
 using Survey.Infrastructure.IService;
@@ -53,8 +55,16 @@ namespace Survey.API.Helper
 
         public static void AddAuthentication(this IServiceCollection services,IConfiguration configuration)
         {
+            //use configure in case of we don't need any validation - use addOptions in case of having validation in JWtOptions Class
+            //services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+            services.AddOptions<JwtOptions>()
+                .BindConfiguration(JwtOptions.SectionName)
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
 
-            var Key = configuration["JwtOptions:securityKey"];
+            var JwtSetting = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>();
+
+            var Key = JwtSetting?.Key;
 
             services.AddAuthentication(options =>
             {
@@ -70,10 +80,10 @@ namespace Survey.API.Helper
                     ValidateLifetime = true,
 
                     ValidateIssuer = true,
-                    ValidIssuer = configuration["JwtOptions:issuer"],
+                    ValidIssuer = JwtSetting?.Issuer,
 
                     ValidateAudience = true,
-                    ValidAudience = configuration["JwtOptions:audience"],
+                    ValidAudience = JwtSetting?.Audience,
                 };
 
             });

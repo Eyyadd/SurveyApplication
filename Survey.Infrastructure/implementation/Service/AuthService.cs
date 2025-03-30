@@ -1,8 +1,10 @@
 ﻿using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Survey.Domain.Entities;
+using Survey.Infrastructure.DTOs.Auth;
 using Survey.Infrastructure.DTOs.Auth.Login;
 using Survey.Infrastructure.DTOs.Auth.Register;
 using Survey.Infrastructure.IService;
@@ -16,9 +18,10 @@ using System.Threading.Tasks;
 
 namespace Survey.Infrastructure.implementation.Service
 {
-    public class AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration) : IAuthService
+    public class AuthService(UserManager<ApplicationUser> userManager, IOptions<JwtOptions> JwtOptions) : IAuthService
     {
         private readonly UserManager<ApplicationUser> _UserManager = userManager;
+        private readonly JwtOptions _JwtOptions = JwtOptions.Value;
 
         public async Task<LoginResponse?> LoginAsync(string Email, string Password, CancellationToken cancellation = default)
         {
@@ -73,25 +76,25 @@ namespace Survey.Infrastructure.implementation.Service
                 new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString())
             ];
 
-            var Key = configuration["JwtOptions:securityKey"];
+            var Key = _JwtOptions.Key;
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Key!));
             var singingCrednatials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
 
-            var ExpiresIn = configuration.GetSection("JwtOptions:expireIn");
+            var ExpiresIn = _JwtOptions.ExpireIn;
 
             var token = new JwtSecurityToken(
-                issuer: configuration["JwtOptions:issuer"],
-                audience: configuration["JwtOptions:audience"],
+                issuer: _JwtOptions.Issuer,
+                audience: _JwtOptions.Audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(40),
+                expires: DateTime.UtcNow.AddMinutes(ExpiresIn),
                 signingCredentials: singingCrednatials
 
             );
 
             var validToken = new JwtSecurityTokenHandler().WriteToken(token);
 
-            return (validToken, 40);
+            return (validToken, ExpiresIn);
 
 
         }
