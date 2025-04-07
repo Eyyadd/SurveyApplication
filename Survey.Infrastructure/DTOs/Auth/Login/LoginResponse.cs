@@ -14,5 +14,8 @@ namespace Survey.Infrastructure.DTOs.Auth.Login
         public string LastName { get; set; } = string.Empty;
         public string Token {  get; set; } = string.Empty;
         public int ExpireIn {  get; set; }
+
+        public string RefreshToken { get; set; } = string.Empty;
+        public DateTime RefreshTokenExpiryTime { get; set; }
     }
 }

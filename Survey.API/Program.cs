@@ -42,6 +42,9 @@ namespace Survey.API
 
             app.UseHttpsRedirection();
 
+            //app.UseCors("CorsPolicy");
+            //for default cors Policy
+            app.UseCors();
             app.UseAuthorization();
 
 

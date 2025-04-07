@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Survey.Infrastructure.DTOs.Auth.Login;
+using Survey.Infrastructure.DTOs.Auth.Refresh_Token;
 using Survey.Infrastructure.DTOs.Auth.Register;
 using Survey.Infrastructure.IService;
 
@@ -26,6 +27,22 @@ namespace Survey.API.Controllers
             var Result = await _AuthService.RegisterAsync(request, cancellationToken);
 
             return Result ? Ok(Result) : BadRequest("Sorry we can't create an accoun currently");
+        }
+
+        [HttpPost(template: "RefreshToken")]
+        public async Task<IActionResult> RefreshTokenAsync(RefreshTokenRequest request, CancellationToken cancellationToken)
+        {
+            var Result = await _AuthService.GetRefreshTokenAsync(request.Token,request.RefreshToken, cancellationToken);
+
+            return Result is not null ? Ok(Result) : BadRequest("Sorry we can't create an Refresh token currently");
+        }
+
+        [HttpPost(template: "Revoke-RefreshToken")]
+        public async Task<IActionResult> RevokeRefreshTokenAsync(RefreshTokenRequest request, CancellationToken cancellationToken)
+        {
+            var Result = await _AuthService.RevokeRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
+
+            return Result ? Ok(Result) : BadRequest("Sorry we can't revoke this refresh token currently");
         }
     }
 }

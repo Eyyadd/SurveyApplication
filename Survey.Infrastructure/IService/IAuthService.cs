@@ -12,5 +12,7 @@ namespace Survey.Infrastructure.IService
     {
         Task<LoginResponse?> LoginAsync(string Email, string Password, CancellationToken cancellation = default);
         Task<bool> RegisterAsync(RegisterRequest request, CancellationToken cancellation = default);
+        Task<LoginResponse?> GetRefreshTokenAsync(string token, string RefreshToken, CancellationToken cancellation = default);
+        Task<bool> RevokeRefreshTokenAsync(string token, string RefreshToken, CancellationToken cancellation = default);
     }
 }

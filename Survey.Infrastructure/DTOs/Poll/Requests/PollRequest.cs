@@ -12,6 +12,5 @@ namespace Survey.Infrastructure.DTOs.Poll.Requests
         public string Summary { get; set; } = string.Empty;
         public DateOnly StartsAt { get; set; }
         public DateOnly EndsAt { get; set; }
-        public bool IsPublished { get; set; }
     }
 }

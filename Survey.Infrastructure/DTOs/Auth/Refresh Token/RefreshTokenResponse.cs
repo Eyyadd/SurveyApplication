@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Survey.Domain.Entities
+namespace Survey.Infrastructure.DTOs.Auth.Refresh_Token
 {
-    public class BaseEntity : Audit
+    internal class RefreshTokenResponse
     {
-        public int Id { get; set; }
     }
 }

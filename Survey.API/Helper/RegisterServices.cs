@@ -39,6 +39,9 @@ namespace Survey.API.Helper
             //Authentication
             services.AddAuthentication(configuration);
 
+            //CORS 
+            services.AddCorsConfiguration();
+
 
 
 
@@ -118,6 +121,31 @@ namespace Survey.API.Helper
             service.AddEndpointsApiExplorer();
             service.AddSwaggerGen();
 
+        }
+
+        public static void AddCorsConfiguration(this IServiceCollection services)
+        {
+            //services.AddCors(options =>
+            //{
+            //    options.AddPolicy("CorsPolicy",
+            //        builder =>
+            //        {
+            //            builder.AllowAnyOrigin()
+            //                   .AllowAnyMethod()
+            //                   .AllowAnyHeader();
+            //        });
+            //});
+
+
+            //for default cors Policy
+            services.AddCors(options=> options.AddDefaultPolicy(
+                builder =>
+                {
+                    builder.AllowAnyOrigin()
+                           .AllowAnyMethod()
+                           .AllowAnyHeader();
+                }
+            ));
         }
     }
 }

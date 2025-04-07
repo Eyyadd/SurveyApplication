@@ -18,6 +18,11 @@ namespace Survey.Infrastructure.Core.Configuration
 
             builder.Property(U => U.LastName)
              .HasMaxLength(50);
+
+            builder.OwnsMany(U => U.RefreshTokens)
+                .ToTable("RefreshTokens")
+                .WithOwner()
+                .HasForeignKey("UserId");
         }
     }
 }

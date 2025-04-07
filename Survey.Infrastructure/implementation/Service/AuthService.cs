@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -22,28 +23,41 @@ namespace Survey.Infrastructure.implementation.Service
     {
         private readonly UserManager<ApplicationUser> _UserManager = userManager;
         private readonly JwtOptions _JwtOptions = JwtOptions.Value;
+        private readonly int _refreshTokenExpiryTime = 14;
 
         public async Task<LoginResponse?> LoginAsync(string Email, string Password, CancellationToken cancellation = default)
         {
-            var UserIsExist = await _UserManager.FindByEmailAsync(Email);
-            if (UserIsExist is null)
+            var userIsExist = await _UserManager.FindByEmailAsync(Email);
+            if (userIsExist is null)
                 return null!;
 
-            var CheckPassword = await _UserManager.CheckPasswordAsync(UserIsExist, Password);
-            if (!CheckPassword)
+            var checkPassword = await _UserManager.CheckPasswordAsync(userIsExist, Password);
+            if (!checkPassword)
                 return null!;
 
             //Generate Token
+            var token = GenerateToken(userIsExist);
+            var refreshToken = GenerateRefreshToken();
+            var refreshTokenExpiryTime = DateTime.UtcNow.AddDays(_refreshTokenExpiryTime);
 
-            var token = GenerateToken(UserIsExist);
+            userIsExist.RefreshTokens.Add(new RefreshToken
+            {
+                Token = refreshToken,
+                ExpiresOn = refreshTokenExpiryTime
+            });
+
+            await _UserManager.UpdateAsync(userIsExist);
+
             var reponse = new LoginResponse
             {
                 Email = Email,
-                FirstName = UserIsExist.FirstName,
-                LastName = UserIsExist.LastName,
-                Id = UserIsExist.Id,
+                FirstName = userIsExist.FirstName,
+                LastName = userIsExist.LastName,
+                Id = userIsExist.Id,
                 Token = token.validToken,
-                ExpireIn = token.expires
+                ExpireIn = token.expires,
+                RefreshToken = refreshToken,
+                RefreshTokenExpiryTime = refreshTokenExpiryTime
             };
             return reponse;
 
@@ -58,12 +72,76 @@ namespace Survey.Infrastructure.implementation.Service
                 return false;
 
             var user = request.Adapt<ApplicationUser>();
-            var result = await _UserManager.CreateAsync(user,request.Password);
+            var result = await _UserManager.CreateAsync(user, request.Password);
 
-            if(result.Succeeded)
+            if (result.Succeeded)
                 return true;
 
             return false;
+        }
+        public async Task<LoginResponse?> GetRefreshTokenAsync(string token, string RefreshToken, CancellationToken cancellation = default)
+        {
+            var userId = ValidateToken(token);
+            if (userId == null)
+                return null!;
+
+            var user = await _UserManager.FindByIdAsync(userId);
+            if (user == null)
+                return null!;
+
+            var userRefreshToken = user.RefreshTokens.FirstOrDefault(x => x.Token == RefreshToken && x.IsActive);
+            if (userRefreshToken == null)
+                return null!;
+
+            userRefreshToken.RevokedOn = DateTime.UtcNow;
+
+            var (newtoken, expires) = GenerateToken(user);
+            var newRefreshToken = GenerateRefreshToken();
+            var newRefreshTokenExpiryTime = DateTime.UtcNow.AddDays(_refreshTokenExpiryTime);
+            user.RefreshTokens.Add(new RefreshToken
+            {
+                Token = newRefreshToken,
+                ExpiresOn = newRefreshTokenExpiryTime
+            });
+
+            await _UserManager.UpdateAsync(user);
+
+            var response = new LoginResponse
+            {
+                Id = user.Id,
+                Email = user.Email!,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Token = newtoken,
+                ExpireIn = expires,
+                RefreshToken = newRefreshToken,
+                RefreshTokenExpiryTime = newRefreshTokenExpiryTime
+            };
+
+            return response;
+        }
+
+
+        public async Task<bool> RevokeRefreshTokenAsync(string token, string RefreshToken, CancellationToken cancellation = default)
+        {
+            var userId = ValidateToken(token);
+
+            if (userId is null)
+                return false;
+
+            var user = await _UserManager.FindByIdAsync(userId);
+            if (user is null)
+                return false;
+
+            var userRefreshToken =  user.RefreshTokens.FirstOrDefault(x => x.Token == RefreshToken && x.IsActive);
+            if (userRefreshToken is null)
+                return false;
+
+            userRefreshToken.RevokedOn = DateTime.UtcNow;
+
+            await _UserManager.UpdateAsync(user);
+
+            return true;
         }
 
         private (string validToken, int expires) GenerateToken(ApplicationUser user)
@@ -98,5 +176,37 @@ namespace Survey.Infrastructure.implementation.Service
 
 
         }
+
+        public static string GenerateRefreshToken()
+        {
+            return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+        }
+
+        private string? ValidateToken(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_JwtOptions.Key!));
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = securityKey,
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ClockSkew = TimeSpan.Zero
+            };
+
+            try
+            {
+                var principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+                var jwtToken = (JwtSecurityToken)validatedToken;
+                return jwtToken.Claims.First(claim => claim.Type == JwtRegisteredClaimNames.Sub).Value;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        
     }
 }
