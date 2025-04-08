@@ -18,7 +18,7 @@ namespace Survey.API.Controllers
         {
             var Result = await _AuthService.LoginAsync(request.Email, request.Password, cancellationToken);
 
-            return Result is not null ? Ok(Result) : BadRequest("Invalid Mail Or Password");
+            return Result.IsSuccess ? Ok(Result.Value) : BadRequest(Result.Error);
         }
 
         [HttpPost(template: "Register")]
@@ -26,7 +26,7 @@ namespace Survey.API.Controllers
         {
             var Result = await _AuthService.RegisterAsync(request, cancellationToken);
 
-            return Result ? Ok(Result) : BadRequest("Sorry we can't create an accoun currently");
+            return Result.IsSuccess ? Ok() : BadRequest(Result.Error);
         }
 
         [HttpPost(template: "RefreshToken")]
@@ -34,7 +34,7 @@ namespace Survey.API.Controllers
         {
             var Result = await _AuthService.GetRefreshTokenAsync(request.Token,request.RefreshToken, cancellationToken);
 
-            return Result is not null ? Ok(Result) : BadRequest("Sorry we can't create an Refresh token currently");
+            return Result.IsSuccess ? Ok(Result.Value) : BadRequest(Result.Error);
         }
 
         [HttpPost(template: "Revoke-RefreshToken")]
@@ -42,7 +42,7 @@ namespace Survey.API.Controllers
         {
             var Result = await _AuthService.RevokeRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
 
-            return Result ? Ok(Result) : BadRequest("Sorry we can't revoke this refresh token currently");
+            return Result.IsSuccess ? Ok() : BadRequest(Result.Error);
         }
     }
 }

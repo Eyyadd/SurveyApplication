@@ -1,12 +1,15 @@
 ﻿using Mapster;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Survey.Domain.Entities;
+using Survey.Infrastructure.Abstractions;
 using Survey.Infrastructure.DTOs.Auth;
 using Survey.Infrastructure.DTOs.Auth.Login;
 using Survey.Infrastructure.DTOs.Auth.Register;
+using Survey.Infrastructure.Errors;
 using Survey.Infrastructure.IService;
 using System;
 using System.Collections.Generic;
@@ -25,15 +28,15 @@ namespace Survey.Infrastructure.implementation.Service
         private readonly JwtOptions _JwtOptions = JwtOptions.Value;
         private readonly int _refreshTokenExpiryTime = 14;
 
-        public async Task<LoginResponse?> LoginAsync(string Email, string Password, CancellationToken cancellation = default)
+        public async Task<Result<LoginResponse>> LoginAsync(string Email, string Password, CancellationToken cancellation = default)
         {
             var userIsExist = await _UserManager.FindByEmailAsync(Email);
             if (userIsExist is null)
-                return null!;
+                return Result.Failure<LoginResponse>(AuthErrors.InvalidLogin);
 
             var checkPassword = await _UserManager.CheckPasswordAsync(userIsExist, Password);
             if (!checkPassword)
-                return null!;
+                return Result.Failure<LoginResponse>(AuthErrors.InvalidLogin);
 
             //Generate Token
             var token = GenerateToken(userIsExist);
@@ -59,39 +62,41 @@ namespace Survey.Infrastructure.implementation.Service
                 RefreshToken = refreshToken,
                 RefreshTokenExpiryTime = refreshTokenExpiryTime
             };
-            return reponse;
+
+
+            return Result.Success<LoginResponse>(reponse);
 
         }
 
 
-        public async Task<bool> RegisterAsync(RegisterRequest request, CancellationToken cancellation = default)
+        public async Task<Result> RegisterAsync(RegisterRequest request, CancellationToken cancellation = default)
         {
             var userIsExist = await _UserManager.FindByEmailAsync(request.Email);
 
             if (userIsExist is not null)
-                return false;
+                return Result.Failure(AuthErrors.UserAlreadyExists);
 
             var user = request.Adapt<ApplicationUser>();
             var result = await _UserManager.CreateAsync(user, request.Password);
 
             if (result.Succeeded)
-                return true;
+                return Result.Success();
 
-            return false;
+            return Result.Failure(AuthErrors.InvalidRegister);
         }
-        public async Task<LoginResponse?> GetRefreshTokenAsync(string token, string RefreshToken, CancellationToken cancellation = default)
+        public async Task<Result<LoginResponse>> GetRefreshTokenAsync(string token, string RefreshToken, CancellationToken cancellation = default)
         {
             var userId = ValidateToken(token);
-            if (userId == null)
-                return null!;
+            if (userId is null)
+                return Result.Failure<LoginResponse>(AuthErrors.InvalidToken);
 
             var user = await _UserManager.FindByIdAsync(userId);
-            if (user == null)
-                return null!;
+            if (user is null)
+                return Result.Failure<LoginResponse>(AuthErrors.UserNotFound);
 
             var userRefreshToken = user.RefreshTokens.FirstOrDefault(x => x.Token == RefreshToken && x.IsActive);
-            if (userRefreshToken == null)
-                return null!;
+            if (userRefreshToken is null)
+                return Result.Failure<LoginResponse>(AuthErrors.RefreshTokenNotFound);
 
             userRefreshToken.RevokedOn = DateTime.UtcNow;
 
@@ -118,30 +123,30 @@ namespace Survey.Infrastructure.implementation.Service
                 RefreshTokenExpiryTime = newRefreshTokenExpiryTime
             };
 
-            return response;
+            return Result.Success(response);
         }
 
 
-        public async Task<bool> RevokeRefreshTokenAsync(string token, string RefreshToken, CancellationToken cancellation = default)
+        public async Task<Result> RevokeRefreshTokenAsync(string token, string RefreshToken, CancellationToken cancellation = default)
         {
             var userId = ValidateToken(token);
 
             if (userId is null)
-                return false;
+                return Result.Failure(AuthErrors.InvalidToken);
 
             var user = await _UserManager.FindByIdAsync(userId);
             if (user is null)
-                return false;
+                return Result.Failure(AuthErrors.UserNotFound);
 
             var userRefreshToken =  user.RefreshTokens.FirstOrDefault(x => x.Token == RefreshToken && x.IsActive);
             if (userRefreshToken is null)
-                return false;
+                return Result.Failure(AuthErrors.RefreshTokenNotFound);
 
             userRefreshToken.RevokedOn = DateTime.UtcNow;
 
             await _UserManager.UpdateAsync(user);
 
-            return true;
+            return Result.Success();
         }
 
         private (string validToken, int expires) GenerateToken(ApplicationUser user)

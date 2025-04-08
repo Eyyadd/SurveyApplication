@@ -1,4 +1,5 @@
-﻿using Survey.Infrastructure.DTOs.Auth.Login;
+﻿using Survey.Infrastructure.Abstractions;
+using Survey.Infrastructure.DTOs.Auth.Login;
 using Survey.Infrastructure.DTOs.Auth.Register;
 using System;
 using System.Collections.Generic;
@@ -10,9 +11,9 @@ namespace Survey.Infrastructure.IService
 {
     public interface IAuthService
     {
-        Task<LoginResponse?> LoginAsync(string Email, string Password, CancellationToken cancellation = default);
-        Task<bool> RegisterAsync(RegisterRequest request, CancellationToken cancellation = default);
-        Task<LoginResponse?> GetRefreshTokenAsync(string token, string RefreshToken, CancellationToken cancellation = default);
-        Task<bool> RevokeRefreshTokenAsync(string token, string RefreshToken, CancellationToken cancellation = default);
+        Task<Result<LoginResponse>> LoginAsync(string Email, string Password, CancellationToken cancellation = default);
+        Task<Result> RegisterAsync(RegisterRequest request, CancellationToken cancellation = default);
+        Task<Result<LoginResponse>> GetRefreshTokenAsync(string token, string RefreshToken, CancellationToken cancellation = default);
+        Task<Result> RevokeRefreshTokenAsync(string token, string RefreshToken, CancellationToken cancellation = default);
     }
 }

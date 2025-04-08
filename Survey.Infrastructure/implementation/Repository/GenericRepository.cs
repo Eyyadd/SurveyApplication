@@ -33,9 +33,9 @@ namespace Survey.Infrastructure.implementation.Repository
             return await _dbContext.Set<T>().AsNoTracking().ToListAsync(cancellationToken);
         }
 
-        public async Task<T> GetById(int id, CancellationToken cancellationToken)
+        public async Task<T?> GetById(int id, CancellationToken cancellationToken)
         {
-            return await _dbContext.Set<T>().FirstAsync(x=>x.Id == id, cancellationToken);
+            return await _dbContext.Set<T>().FirstOrDefaultAsync(x=>x.Id == id, cancellationToken);
         }
 
         public async Task<bool> IsExist(int id, CancellationToken cancellationToken)
@@ -53,6 +53,11 @@ namespace Survey.Infrastructure.implementation.Repository
         public async Task<int> SaveChanges(CancellationToken cancellation)
         {
             return await _dbContext.SaveChangesAsync(cancellation);
+        }
+
+        public Task<T?> GetByIdWithoutTracking(int id, CancellationToken cancellationToken)
+        {
+           return _dbContext.Set<T>().AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         }
     }
 }
