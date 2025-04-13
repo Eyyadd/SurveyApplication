@@ -45,11 +45,13 @@ namespace Survey.API
             //app.UseCors("CorsPolicy");
             //for default cors Policy
             app.UseCors();
-            app.UseAuthorization();
 
+            app.UseAuthorization();
 
             app.MapControllers();
 
+            // app.UseMiddleware<HandleExceptions>();
+            app.UseExceptionHandler();
             app.Run();
         }
     }

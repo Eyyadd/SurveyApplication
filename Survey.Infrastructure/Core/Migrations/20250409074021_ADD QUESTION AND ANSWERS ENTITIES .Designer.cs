@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Survey.Infrastructure.Core;
 
@@ -11,9 +12,11 @@ using Survey.Infrastructure.Core;
 namespace Survey.Infrastructure.Core.Migrations
 {
     [DbContext(typeof(SurveyDbContext))]
-    partial class SurveyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250409074021_ADD QUESTION AND ANSWERS ENTITIES ")]
+    partial class ADDQUESTIONANDANSWERSENTITIES
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -168,30 +171,13 @@ namespace Survey.Infrastructure.Core.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedByUserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<int>("QuestionId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedByUserId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedByUserId");
-
-                    b.HasIndex("UpdatedByUserId");
 
                     b.HasIndex("QuestionId", "Content");
 
@@ -420,27 +406,13 @@ namespace Survey.Infrastructure.Core.Migrations
 
             modelBuilder.Entity("Survey.Domain.Entities.Answer", b =>
                 {
-                    b.HasOne("Survey.Domain.Entities.ApplicationUser", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("Survey.Domain.Entities.Question", "Question")
                         .WithMany("Answers")
                         .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Survey.Domain.Entities.ApplicationUser", "UpdatedBy")
-                        .WithMany()
-                        .HasForeignKey("UpdatedByUserId");
-
-                    b.Navigation("CreatedBy");
-
                     b.Navigation("Question");
-
-                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("Survey.Domain.Entities.ApplicationUser", b =>

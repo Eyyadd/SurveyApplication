@@ -6,7 +6,7 @@ namespace Survey.Infrastructure.Extensions
 {
     public static class ResultExtension
     {
-        public static ObjectResult StandareError(this Result result, int statusCodes)
+        public static ObjectResult StandardError(this Result result, int statusCodes)
         {
             if (result.IsSuccess)
                 throw new InvalidOperationException("Result is not successful");

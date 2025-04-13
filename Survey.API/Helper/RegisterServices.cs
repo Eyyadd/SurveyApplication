@@ -9,10 +9,10 @@ using Microsoft.IdentityModel.Tokens;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using Survey.Domain.Interfaces.IRepository;
 using Survey.Infrastructure.DTOs.Auth;
+using Survey.Infrastructure.Errors;
 using Survey.Infrastructure.implementation.Repository;
 using Survey.Infrastructure.implementation.Service;
 using Survey.Infrastructure.IService;
-using Survey.Infrastructure.Mapping;
 using System.Reflection;
 using System.Text;
 
@@ -43,18 +43,27 @@ namespace Survey.API.Helper
             //CORS 
             services.AddCorsConfiguration();
 
+            //Excpetion Handlding
+            services.AddGlobalExceptionHandler();
+
 
 
 
 
 
         }
-
+        public static void AddGlobalExceptionHandler(this IServiceCollection services)
+        {
+            services.AddExceptionHandler<GlobalExceptions>();
+            services.AddProblemDetails();
+        }
         public static void AddServices(this IServiceCollection services)
         {
             services.AddScoped<IPollService, PollService>();
-            services.AddScoped<IGenericRepository<Poll>, GenericRepository<Poll>>();
+            services.AddScoped<IQuestionService, QuestionService>();
+            services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             services.AddScoped<IAuthService,AuthService>();
+            services.AddScoped<IQuestionRepo,QuestionRepo>();
         }
 
         public static void AddAuthentication(this IServiceCollection services,IConfiguration configuration)
@@ -105,7 +114,8 @@ namespace Survey.API.Helper
         public static void MapsterConfiguration(this IServiceCollection services)
         {
             var mappingConfig = TypeAdapterConfig.GlobalSettings;
-            mappingConfig.Scan(Assembly.GetExecutingAssembly());
+            var assembly = Assembly.Load("Survey.Infrastructure");
+            mappingConfig.Scan(assembly);
             services.AddSingleton<IMapper>(new Mapper(mappingConfig));
         }
 

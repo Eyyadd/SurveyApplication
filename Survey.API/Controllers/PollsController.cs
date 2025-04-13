@@ -27,7 +27,7 @@ namespace Survey.API.Controllers
         public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
         {
             var result = await _PollService.GetByIdAsync(id, cancellationToken);
-            return result.IsSuccess ? Ok(result.Value) : result.StandareError(StatusCodes.Status400BadRequest);
+            return result.IsSuccess ? Ok(result.Value) : result.StandardError(StatusCodes.Status400BadRequest);
         }
 
         [HttpPost("")]
@@ -35,14 +35,14 @@ namespace Survey.API.Controllers
         {
             var result = await _PollService.AddAsync(entity, cancellationToken);
 
-            return result.IsSuccess ? Ok() : result.StandareError(StatusCodes.Status400BadRequest);
+            return result.IsSuccess ? Ok() : result.StandardError(StatusCodes.Status400BadRequest);
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] PollRequest entity, CancellationToken cancellationToken)
         {
             var result = await _PollService.UpdateAsync(id, entity, cancellationToken);
-            return result.IsSuccess ? Ok(result.Value) : result.StandareError(StatusCodes.Status400BadRequest);
+            return result.IsSuccess ? Ok(result.Value) : result.StandardError(StatusCodes.Status400BadRequest);
 
         }
 

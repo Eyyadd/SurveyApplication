@@ -9,15 +9,14 @@ using System.Threading.Tasks;
 
 namespace Survey.Infrastructure.Core.Configuration
 {
-    internal class PollsConfiguration : IEntityTypeConfiguration<Poll>
+    public class QuestionsConfiguration : IEntityTypeConfiguration<Question>
     {
-        public void Configure(EntityTypeBuilder<Poll> builder)
+        public void Configure(EntityTypeBuilder<Question> builder)
         {
-            builder.HasIndex(P => P.Title)
-                .IsUnique();
-
-            builder.Property(P => P.Title)
-                .HasMaxLength(30);
+            builder.HasIndex(a => new { a.PollId, a.Content });
+            builder.Property(a => a.Content)
+                .IsRequired()
+                .HasMaxLength(1000);
         }
     }
 }

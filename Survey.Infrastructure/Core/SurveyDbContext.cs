@@ -23,6 +23,17 @@ namespace Survey.Infrastructure.Core
 
             //Apply All Configuration for all models in the assembly
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+            //change the behavior of the cascade delete as global 
+
+            var foreignKeys = modelBuilder.Model.GetEntityTypes()
+                .SelectMany(e => e.GetForeignKeys())
+                .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
+
+            foreach (var fk in foreignKeys)
+            {
+                fk.DeleteBehavior = DeleteBehavior.Restrict;
+            }
             base.OnModelCreating(modelBuilder);
         }
 
@@ -47,5 +58,7 @@ namespace Survey.Infrastructure.Core
             return base.SaveChangesAsync(cancellationToken);
         }
         public DbSet<Poll> Polls { get; set; }
+        public DbSet<Question> Questions { get; set; }
+        public DbSet<Answer>  Answers { get; set; }
     }
 }
