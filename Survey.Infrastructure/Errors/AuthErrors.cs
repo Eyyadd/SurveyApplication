@@ -17,6 +17,10 @@ namespace Survey.Infrastructure.Errors
         public static Error RefreshTokenNotFound => new Error("Refresh Token Not Found", "The provided refresh token was not found. Please log in again.");
         public static Error RefreshTokenExpired => new Error("Refresh Token Expired", "The provided refresh token has expired. Please log in again.");
         public static Error InvalidRegister => new Error("Invalid Register", "Invalid registration attempt. Please check your details and try again.");
+        public static Error EmailNotConfirmed => new Error("Email Not Confirmed", "Email not confirmed. Please check your email and try again.");
+        public static Error EmailAlreadyConfirmed => new Error("Email Already Confirmed", "Email already confirmed. Please Login directly.");
+        public static Error InvalidCode => new Error("Invalid Code", "Code for Confirmation Email is invalid.");
+
 
     }
 }

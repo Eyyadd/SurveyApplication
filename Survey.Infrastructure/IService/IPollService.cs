@@ -13,4 +13,5 @@ public interface IPollService
     Task<Result<PollResponse>> UpdateAsync(int id,PollRequest entity, CancellationToken cancellationToken);
     Task<Result> DeleteAsync(int id ,CancellationToken cancellationToken);
     Task<Result> ToggleIsPublished(int id, CancellationToken cancellationToken);
+    Task<Result<IEnumerable<PollResponse>>> GetAvailablePolls(CancellationToken cancellationToken);
 }

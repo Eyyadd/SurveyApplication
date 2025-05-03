@@ -1,8 +1,5 @@
-
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
+using Serilog;
 using Survey.API.Helper;
-using Survey.Infrastructure.Core;
 
 namespace Survey.API
 {
@@ -14,6 +11,13 @@ namespace Survey.API
 
             // Add services to the container.
             RegisterServices.Register(builder.Services, builder.Configuration);
+
+            builder.Host.UseSerilog((context, configuration) =>
+            {
+                configuration.ReadFrom.Configuration(context.Configuration);
+            });
+
+            builder.Services.AddResponseCaching();
 
             var app = builder.Build();
 
@@ -40,6 +44,7 @@ namespace Survey.API
                 app.UseSwaggerUI();
             }
 
+            app.UseSerilogRequestLogging();
             app.UseHttpsRedirection();
 
             //app.UseCors("CorsPolicy");
@@ -47,6 +52,8 @@ namespace Survey.API
             app.UseCors();
 
             app.UseAuthorization();
+
+            app.UseResponseCaching();
 
             app.MapControllers();
 

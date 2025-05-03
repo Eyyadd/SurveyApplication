@@ -10,9 +10,9 @@ using Survey.Infrastructure.IService;
 
 namespace Survey.Infrastructure.implementation.Service
 {
-    public class PollService(IGenericRepository<Poll> PollRepo , IMapper mapper) : IPollService
+    public class PollService(IPollRepo PollRepo , IMapper mapper) : IPollService
     {
-        private readonly IGenericRepository<Poll> _pollRepo = PollRepo;
+        private readonly IPollRepo _pollRepo = PollRepo;
         private readonly IMapper _Mapper = mapper;
 
         public async Task<Result> AddAsync(PollRequest entity, CancellationToken cancellationToken)
@@ -95,6 +95,15 @@ namespace Survey.Infrastructure.implementation.Service
                 return Result.Success();
             }
             return Result.Failure(PollErrors.PollNotFound);
+        }
+
+        public async Task<Result<IEnumerable<PollResponse>>> GetAvailablePolls(CancellationToken cancellationToken)
+        {
+            // it should be isPublished and the current date between start and end date
+            var currentPolls = await _pollRepo.GetCurrentPolls(cancellationToken);
+            var PollRespons = currentPolls.Adapt<IEnumerable<PollResponse>>();
+
+            return Result.Success(PollRespons);
         }
     }
 }

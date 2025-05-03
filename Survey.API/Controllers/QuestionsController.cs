@@ -42,7 +42,7 @@ namespace Survey.API.Controllers
         public async Task<IActionResult> Update([FromRoute] int pollId,[FromRoute] int id, [FromBody] QuestionRequest entity, CancellationToken cancellationToken)
         {
             var result = await _QuestionService.UpdateAsync(pollId,id, entity, cancellationToken);
-            return result.IsSuccess ? Ok(result.Value) : result.StandardError(StatusCodes.Status400BadRequest);
+            return result.IsSuccess ? Ok() : result.StandardError(StatusCodes.Status400BadRequest);
 
         }
 

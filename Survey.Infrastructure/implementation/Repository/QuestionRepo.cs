@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Survey.Domain.Entities;
 using Survey.Domain.Interfaces.IRepository;
 using Survey.Infrastructure.Core;
@@ -77,27 +78,71 @@ namespace Survey.Infrastructure.implementation.Repository
             return questionIsExist;
         }
 
-        public async Task<Question> UpdateByPollId(int pollId, int id, Question entity, CancellationToken cancellationToken)
+        public async Task<bool> UpdateByPollId(int pollId, int id, Question entity, CancellationToken cancellationToken)
         {
             var questionIsExist = await _DbContext.Questions.AnyAsync(q => q.PollId == pollId && q.Id != q.Id && entity.Content == q.Content);
 
-            if(questionIsExist)
+            if(!questionIsExist)
             {
                 var question = await _DbContext.Questions
                     .Include(q => q.Answers)
                     .SingleOrDefaultAsync(q => q.Id == id && q.PollId == pollId, cancellationToken);
 
-                if(question is not null)
-                {
-                    question.Content = entity.Content;
-                    question.Answers = entity.Answers;
-                    question.PollId = pollId;
+                if (question is null)
+                    return false;
 
-                    await SaveChanges(cancellationToken);
-                }
+                question.Content = entity.Content;
+
+                // answers section 1- get current answer 2- convert new answer into domain answer 3- deactivate 'delete' the answers which not in the new answers  - update the new answers
+                var currentAnswers = question.Answers.Select(a => a.Content).ToList();
+
+                var newAnswers = entity.Answers.ExceptBy(currentAnswers, a => a.Content).ToList();
+
+                newAnswers.ForEach(a =>
+                {
+                    question.Answers.Add(new Answer { Content = a.Content });
+                });
+
+                // deactivate the answers which not in the entity 
+                question.Answers.ToList().ForEach(answer =>
+                {
+                    answer.IsActive = entity.Answers.Any(a => a.Content == answer.Content);
+                });
+
+                await _DbContext.SaveChangesAsync(cancellationToken);
+
+                return true;
+
             }
 
-            return null!;
+            return false;
+
+        }
+
+        public async Task<IEnumerable<Question>> GetNotVotedQuestion(int pollId, CancellationToken cancellationToken)
+        {
+            var result = await _DbContext.Questions
+                 .Where(q => q.PollId == pollId && q.IsActive)
+                 .Include(a => a.Answers)
+                 .Select(a => new Question
+                 {
+                     Id = a.Id,
+                     Content = a.Content,
+                     Answers = a.Answers.Where(a => a.IsActive)
+                     .Select(a => new Answer { Id = a.Id, Content = a.Content })
+                     .ToList()
+                 }).ToListAsync(cancellationToken);
+
+            return result;
+        }
+
+        public async Task<IEnumerable<int>> GetAvailablePollsIDS(int pollId, CancellationToken cancellationToken)
+        {
+            var result = await _DbContext.Questions.Where(q => q.PollId == pollId && q.IsActive)
+                .Select(q => q.Id)
+                .ToListAsync(cancellationToken);
+
+            return result;
         }
     }
 }

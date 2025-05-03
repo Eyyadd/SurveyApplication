@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
+using Survey.Domain.Interfaces.IRepository;
 using Survey.Infrastructure.DTOs.Poll.Requests;
 using System;
 using System.Collections.Generic;
@@ -11,11 +12,17 @@ namespace Survey.Infrastructure.FluentValidation.PollValidator
 {
     public class PollRequestValidator : AbstractValidator<PollRequest>
     {
-        public PollRequestValidator()
+        private readonly IPollRepo _PollRepo;
+        public PollRequestValidator(IPollRepo pollRepo)
         {
+            _PollRepo = pollRepo;
+
             RuleFor(P => P.Title)
                 .NotEmpty()
                 .Length(min: 3, max: 50);
+
+            RuleFor(P => P.Title)
+                .MustAsync(Uniqueness).WithMessage("Can't be Duplicate the title");
 
             RuleFor(P => P.Summary)
                 .NotEmpty()
@@ -23,7 +30,7 @@ namespace Survey.Infrastructure.FluentValidation.PollValidator
 
             RuleFor(P => P.StartsAt)
                 .NotEmpty()
-                .GreaterThan(DateOnly.FromDateTime(DateTime.Today));
+                .GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.Today));
 
             RuleFor(P => P)
                 .Must(ValidRangeDate)
@@ -32,11 +39,17 @@ namespace Survey.Infrastructure.FluentValidation.PollValidator
 
             RuleFor(P => P.EndsAt)
                 .NotEmpty();
+            
         }
 
         public bool ValidRangeDate(PollRequest request)
         {
             return request.StartsAt <= request.EndsAt;
+        }
+
+        public async Task<bool> Uniqueness(string title,CancellationToken cancellationToken)
+        {
+            return await _PollRepo.IsTitleUnique(title);
         }
     }
 }

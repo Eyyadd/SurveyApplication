@@ -15,5 +15,8 @@ namespace Survey.Infrastructure.IService
         Task<Result> RegisterAsync(RegisterRequest request, CancellationToken cancellation = default);
         Task<Result<LoginResponse>> GetRefreshTokenAsync(string token, string RefreshToken, CancellationToken cancellation = default);
         Task<Result> RevokeRefreshTokenAsync(string token, string RefreshToken, CancellationToken cancellation = default);
+        Task<Result> ConfirmEmailAsync(ConfirmEmailRequest request, CancellationToken cancellation = default);
+        Task<Result> ResendMailVerification(string email, CancellationToken cancellation = default);
+
     }
 }

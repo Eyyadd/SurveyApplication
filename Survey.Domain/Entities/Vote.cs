@@ -6,13 +6,17 @@ using System.Threading.Tasks;
 
 namespace Survey.Domain.Entities
 {
-    public class Question : BaseEntity
+    public class Vote : BaseEntity
     {
-        public string Content { get; set; } = string.Empty;
-        public bool IsActive { get; set; } = true;
         public int PollId { get; set; }
+
         public Poll Poll { get; set; } = default!;
-        public ICollection<Answer> Answers { get; set; } = [];
+
+        public string UserId { get; set; } = string.Empty;
+        public ApplicationUser User { get; set; } = default!;
+
+        public DateTime SubmittedOn { get; set; } = DateTime.UtcNow;
+
         public ICollection<VoteAnswer> voteAnswers { get; set; } = [];
     }
 }

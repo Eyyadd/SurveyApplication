@@ -13,10 +13,12 @@ namespace Survey.Infrastructure.IService
     public interface IQuestionService
     {
         Task<Result<IEnumerable<QuestionResponse>>> GetAllAsync(int pollId,CancellationToken cancellationToken);
+        Task<Result<IEnumerable<QuestionResponse>>> GetAvailableAsync(int pollId,string userId,CancellationToken cancellationToken);
         Task<Result<QuestionResponse>> GetByIdAsync(int pollId, int id, CancellationToken cancellationToken);
         Task<Result<QuestionResponse>> AddAsync(int pollId,QuestionRequest entity, CancellationToken cancellationToken);
-        Task<Result<QuestionResponse>> UpdateAsync(int pollId,int id, QuestionRequest entity, CancellationToken cancellationToken);
+        Task<Result> UpdateAsync(int pollId,int id, QuestionRequest entity, CancellationToken cancellationToken);
         Task<Result> DeleteAsync(int pollId,int id, CancellationToken cancellationToken);
         Task<Result> ToggleStatus(int pollId,int id, CancellationToken cancellationToken);
+        
     }
 }

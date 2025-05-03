@@ -1,7 +1,9 @@
 ﻿using Mapster;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Survey.Domain.Entities;
@@ -11,20 +13,26 @@ using Survey.Infrastructure.DTOs.Auth.Login;
 using Survey.Infrastructure.DTOs.Auth.Register;
 using Survey.Infrastructure.Errors;
 using Survey.Infrastructure.IService;
-using System;
-using System.Collections.Generic;
+using Survey.Infrastructure.Template;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
+using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
+
 
 namespace Survey.Infrastructure.implementation.Service
 {
-    public class AuthService(UserManager<ApplicationUser> userManager, IOptions<JwtOptions> JwtOptions) : IAuthService
+    public class AuthService(UserManager<ApplicationUser> userManager,
+        IOptions<JwtOptions> JwtOptions,
+        ILogger<AuthService> logger,
+        IEmailSender Email,
+        IHttpContextAccessor contextAccessor) : IAuthService
     {
         private readonly UserManager<ApplicationUser> _UserManager = userManager;
+        private readonly ILogger<AuthService> _Logger = logger;
+        private readonly IEmailSender _Email = Email;
+        private readonly IHttpContextAccessor _ContextAccessor = contextAccessor;
         private readonly JwtOptions _JwtOptions = JwtOptions.Value;
         private readonly int _refreshTokenExpiryTime = 14;
 
@@ -37,6 +45,10 @@ namespace Survey.Infrastructure.implementation.Service
             var checkPassword = await _UserManager.CheckPasswordAsync(userIsExist, Password);
             if (!checkPassword)
                 return Result.Failure<LoginResponse>(AuthErrors.InvalidLogin);
+
+            if (!userIsExist.EmailConfirmed)
+                return Result.Failure<LoginResponse>(AuthErrors.EmailNotConfirmed);
+
 
             //Generate Token
             var token = GenerateToken(userIsExist);
@@ -64,7 +76,7 @@ namespace Survey.Infrastructure.implementation.Service
             };
 
 
-            return Result.Success<LoginResponse>(reponse);
+            return Result.Success(reponse);
 
         }
 
@@ -80,7 +92,15 @@ namespace Survey.Infrastructure.implementation.Service
             var result = await _UserManager.CreateAsync(user, request.Password);
 
             if (result.Succeeded)
+            {
+                var code = await _UserManager.GenerateEmailConfirmationTokenAsync(user);
+                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                _Logger.LogInformation(message: code);
+
+                //TODO: Send Mail Verifcation
+                await SendMailVerification(user, code);
                 return Result.Success();
+            }
 
             return Result.Failure(AuthErrors.InvalidRegister);
         }
@@ -138,7 +158,7 @@ namespace Survey.Infrastructure.implementation.Service
             if (user is null)
                 return Result.Failure(AuthErrors.UserNotFound);
 
-            var userRefreshToken =  user.RefreshTokens.FirstOrDefault(x => x.Token == RefreshToken && x.IsActive);
+            var userRefreshToken = user.RefreshTokens.FirstOrDefault(x => x.Token == RefreshToken && x.IsActive);
             if (userRefreshToken is null)
                 return Result.Failure(AuthErrors.RefreshTokenNotFound);
 
@@ -149,6 +169,48 @@ namespace Survey.Infrastructure.implementation.Service
             return Result.Success();
         }
 
+        public async Task<Result> ConfirmEmailAsync(ConfirmEmailRequest request, CancellationToken cancellation = default)
+        {
+            var user = await _UserManager.FindByIdAsync(request.UserId);
+            if (user is null)
+                return Result.Failure(AuthErrors.UserNotFound);
+            if (user.EmailConfirmed)
+                return Result.Failure(AuthErrors.EmailAlreadyConfirmed);
+            var decodedCode = request.Code;
+            try
+            {
+                decodedCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(decodedCode));
+
+            }
+            catch (Exception)
+            {
+                return Result.Failure(AuthErrors.InvalidCode);
+            }
+            var result = await _UserManager.ConfirmEmailAsync(user, decodedCode);
+
+            if (result.Succeeded)
+                return Result.Success();
+            var error = result.Errors.FirstOrDefault();
+            return Result.Failure(new Error(error.Code, error.Description));
+        }
+
+        public async Task<Result> ResendMailVerification(string Email, CancellationToken cancellation = default)
+        {
+            var user = await _UserManager.FindByEmailAsync(Email);
+            if (user is null)
+                return Result.Failure(AuthErrors.UserNotFound);
+            if (user.EmailConfirmed)
+                return Result.Failure(AuthErrors.EmailAlreadyConfirmed);
+
+            var code = await _UserManager.GenerateEmailConfirmationTokenAsync(user);
+            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+            _Logger.LogInformation(message: code);
+
+
+            //TODO: Send Code to Email
+            await SendMailVerification(user, code);
+            return Result.Success();
+        }
         private (string validToken, int expires) GenerateToken(ApplicationUser user)
         {
             Claim[] claims = [
@@ -212,6 +274,28 @@ namespace Survey.Infrastructure.implementation.Service
             }
         }
 
-        
+        private async Task SendMailVerification(ApplicationUser user, string code)
+        {
+            var origin = _ContextAccessor.HttpContext?.Request.Headers.Origin;
+            var dict = new Dictionary<string, string>
+                {
+                    {
+                        "{{UserName}}" , user.FirstName + " " + user.LastName
+                    },
+                    {
+                        "{{VerificationLink}}",$"{origin}/auth/Confirm-Email?userId=${user.Id}&code=${code}"
+                    },
+                    {
+                        "{{VerificationCode}}",$"{code}"
+                    },
+                    {
+                        "{{CurrentYear}}",$"{DateOnly.FromDateTime(DateTime.Now).Year}"
+                    }
+                };
+            var emailBody = EmailBodyBuilder.GenerateBody("EmailVerification", dict);
+            await _Email.SendEmailAsync(user.Email!, "SurveyBasket - Confirmation Mail ✅🤗", emailBody);
+        }
+
+
     }
 }

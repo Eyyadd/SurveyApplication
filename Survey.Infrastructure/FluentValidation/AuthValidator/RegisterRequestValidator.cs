@@ -25,7 +25,8 @@ namespace Survey.Infrastructure.FluentValidation.AuthValidator
                 .EmailAddress();
 
             RuleFor(U => U.Password)
-                .NotEmpty();
+                .NotEmpty()
+                .Matches(RegexExpress.Password);
 
             RuleFor(U => U.UserName)
                 .NotEmpty();

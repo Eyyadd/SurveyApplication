@@ -54,6 +54,13 @@ namespace Survey.API.Controllers
             return result.IsSuccess ? Ok() : BadRequest(result.Error);
         }
 
+        [HttpGet("Available")]
+        public async Task<IActionResult> GetAvailable(CancellationToken cancellationToken)
+        {
+            var result = await _PollService.GetAvailablePolls(cancellationToken);
+            return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
+        }
+
         [HttpPut("{id}/Toggle-IsPublished")]
         public async Task<IActionResult> ToggleIsPublished(int id, CancellationToken cancellationToken)
         {

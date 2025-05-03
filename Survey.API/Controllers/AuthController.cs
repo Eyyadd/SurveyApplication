@@ -47,5 +47,21 @@ namespace Survey.API.Controllers
 
             return result.IsSuccess ? Ok() : result.StandardError(StatusCodes.Status400BadRequest);
         }
+
+        [HttpPost("Confirm-Email")]
+        public async Task<IActionResult> ConfirmEmail(ConfirmEmailRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _AuthService.ConfirmEmailAsync(request, cancellationToken);
+
+            return result.IsSuccess ? Ok() : result.StandardError(StatusCodes.Status400BadRequest);
+        }
+
+        [HttpPost(template: "Resend-Mail-Verification")]
+        public async Task<IActionResult> ResendMailVerification(string email, CancellationToken cancellationToken)
+        {
+            var result = await _AuthService.ResendMailVerification(email, cancellationToken);
+
+            return result.IsSuccess ? Ok() : result.StandardError(StatusCodes.Status400BadRequest);
+        }
     }
 }

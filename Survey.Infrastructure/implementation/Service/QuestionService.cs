@@ -14,10 +14,10 @@ using System.Threading.Tasks;
 
 namespace Survey.Infrastructure.implementation.Service
 {
-    public class QuestionService(IQuestionRepo questionRepo, IGenericRepository<Poll> pollRepo, IGenericRepository<Answer> answerRepo) : IQuestionService
+    public class QuestionService(IQuestionRepo questionRepo, IPollRepo pollRepo, IGenericRepository<Answer> answerRepo) : IQuestionService
     {
         private readonly IQuestionRepo _QuestionRepo = questionRepo;
-        private readonly IGenericRepository<Poll> _PollRepo = pollRepo;
+        private readonly IPollRepo _PollRepo = pollRepo;
         private readonly IGenericRepository<Answer> _AnswerRepo = answerRepo;
 
         public async Task<Result<QuestionResponse>> AddAsync(int pollId, QuestionRequest entity, CancellationToken cancellationToken)
@@ -60,6 +60,26 @@ namespace Survey.Infrastructure.implementation.Service
             return Result.Success(questionResponses);
         }
 
+        public async Task<Result<IEnumerable<QuestionResponse>>> GetAvailableAsync(int pollId, string userId, CancellationToken cancellationToken)
+        {
+            //first check is pollId Exist 
+            var isPollExist = await _PollRepo.IsExist(pollId, cancellationToken);
+            if (!isPollExist)
+                return Result.Failure<IEnumerable<QuestionResponse>>(PollErrors.PollNotFound);
+            //then check that the current user has already voted on this poll ? 
+            var hasVoted = await _PollRepo.isQuestionVotedByUser(pollId, userId, cancellationToken);
+            if(hasVoted)
+                return Result.Failure<IEnumerable<QuestionResponse>>(VoteErrors.UserAlreadyVote);
+
+            var question = await _QuestionRepo.GetNotVotedQuestion(pollId, cancellationToken);
+           
+            var result = question.Adapt<IEnumerable<QuestionResponse>>();
+
+            return Result.Success(result);
+
+
+        }
+
         public async Task<Result<QuestionResponse>> GetByIdAsync(int pollId, int id, CancellationToken cancellationToken)
         {
             var question = await _QuestionRepo.GetQuestionByPollId(pollId, id, cancellationToken);
@@ -82,7 +102,7 @@ namespace Survey.Infrastructure.implementation.Service
             return Result.Success();
         }
 
-        public async Task<Result<QuestionResponse>> UpdateAsync(int pollId, int id, QuestionRequest entity, CancellationToken cancellationToken)
+        public async Task<Result> UpdateAsync(int pollId, int id, QuestionRequest entity, CancellationToken cancellationToken)
         {
             //check if there's a poll with that poll Id
             var pollIsExist =  await _PollRepo.IsExist(pollId, cancellationToken);
@@ -96,11 +116,13 @@ namespace Survey.Infrastructure.implementation.Service
             var question = entity.Adapt<Question>();
             //update the question 
             var result = await _QuestionRepo.UpdateByPollId(pollId,id, question, cancellationToken);
-            if (result is null)
+            if (!result)
                 return Result.Failure<QuestionResponse>(QuestionErrors.QuestionUpdateFailed);
-            var questionRepsonse = result.Adapt<QuestionResponse>();
 
-            return Result.Success(questionRepsonse);
+            return Result.Success();
         }
+
+
+
     }
 }

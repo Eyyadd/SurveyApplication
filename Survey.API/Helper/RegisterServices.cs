@@ -4,6 +4,7 @@ using Mapster;
 using MapsterMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
@@ -64,6 +65,14 @@ namespace Survey.API.Helper
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             services.AddScoped<IAuthService,AuthService>();
             services.AddScoped<IQuestionRepo,QuestionRepo>();
+            services.AddScoped<IPollRepo,PollRepo>();
+            services.AddScoped<IVoteRepo,VoteRepo>();
+            services.AddScoped<IVoteService,VoteService>();
+            services.AddScoped<IVoteResultService,VoteResultService>();
+            services.AddScoped<IEmailSender, EmailService>();
+            services.AddHttpContextAccessor();
+
+            
         }
 
         public static void AddAuthentication(this IServiceCollection services,IConfiguration configuration)
@@ -74,6 +83,14 @@ namespace Survey.API.Helper
                 .BindConfiguration(JwtOptions.SectionName)
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
+
+
+            services.Configure<IdentityOptions>(options =>
+            {
+                options.Password.RequiredLength = 8;
+                options.SignIn.RequireConfirmedAccount = true;
+                options.User.RequireUniqueEmail = true;
+            });
 
             var JwtSetting = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>();
 
@@ -100,6 +117,8 @@ namespace Survey.API.Helper
                 };
 
             });
+
+            services.Configure<Infrastructure.Setting.MailSetting>(configuration.GetSection(nameof(Infrastructure.Setting.MailSetting)));
         }
 
         public static void DbContextConfiguration(this IServiceCollection services, IConfiguration configuration)
@@ -108,7 +127,8 @@ namespace Survey.API.Helper
             services.AddDbContext<SurveyDbContext>(options => options.UseSqlServer(connectionString));
 
             services.AddIdentity<ApplicationUser, IdentityRole>()
-                .AddEntityFrameworkStores<SurveyDbContext>();
+                .AddEntityFrameworkStores<SurveyDbContext>()
+                .AddDefaultTokenProviders();
         }
 
         public static void MapsterConfiguration(this IServiceCollection services)
