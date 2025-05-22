@@ -1,4 +1,5 @@
-﻿using Mapster;
+﻿using Hangfire;
+using Mapster;
 using MapsterMapper;
 using Survey.Domain.Entities;
 using Survey.Domain.Interfaces.IRepository;
@@ -10,10 +11,11 @@ using Survey.Infrastructure.IService;
 
 namespace Survey.Infrastructure.implementation.Service
 {
-    public class PollService(IPollRepo PollRepo , IMapper mapper) : IPollService
+    public class PollService(IPollRepo PollRepo , IMapper mapper,INotificationService notificationService) : IPollService
     {
         private readonly IPollRepo _pollRepo = PollRepo;
         private readonly IMapper _Mapper = mapper;
+        private readonly INotificationService _NotificationService = notificationService;
 
         public async Task<Result> AddAsync(PollRequest entity, CancellationToken cancellationToken)
         {
@@ -92,6 +94,11 @@ namespace Survey.Infrastructure.implementation.Service
                 var Poll = await _pollRepo.GetById(id, cancellationToken);
                 Poll!.IsPublished = !Poll.IsPublished;
                 var result = await _pollRepo.SaveChanges(cancellationToken);
+
+                if(Poll.IsPublished && Poll.StartsAt == DateOnly.FromDateTime(DateTime.UtcNow))
+                {
+                    BackgroundJob.Enqueue(() => _NotificationService.SendNewPollNotification(Poll.Id));
+                }
                 return Result.Success();
             }
             return Result.Failure(PollErrors.PollNotFound);

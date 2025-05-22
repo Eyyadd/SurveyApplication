@@ -75,6 +75,7 @@ namespace Survey.API.Helper
             services.AddScoped<IVoteService, VoteService>();
             services.AddScoped<IVoteResultService, VoteResultService>();
             services.AddScoped<IEmailSender, EmailService>();
+            services.AddScoped<INotificationService,NotificationService>();
             services.AddHttpContextAccessor();
 
 

@@ -45,8 +45,8 @@ namespace Survey.Infrastructure.implementation.Service
                     var placeholders = new Dictionary<string, string>
                     {
                         {"{{name}}", user.FirstName },
-                        {"{{pollTitle}}", poll!.Title },
-                        {"{{pollDate}}", poll.EndsAt.ToString("yyyy-MM-dd") },
+                        {"{{pollTill}}", poll!.Title },
+                        {"{{endDate}}", poll.EndsAt.ToString("yyyy-MM-dd") },
                         {"{{url}}",$"localhost://44391/polls/start/{poll.Id}"},
 
                     };

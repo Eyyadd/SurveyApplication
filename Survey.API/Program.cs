@@ -3,6 +3,7 @@ using Serilog;
 using Survey.API.Helper;
 using Hangfire.Dashboard;
 using HangfireBasicAuthenticationFilter;
+using Survey.Infrastructure.IService;
 
 namespace Survey.API
 {
@@ -63,8 +64,19 @@ namespace Survey.API
 
                     }
                 ],
-                DashboardTitle = " Survey Dashboard"
+                DashboardTitle = " Survey Dashboard",
+                //IsReadOnlyFunc = (DashboardContext context) => true,
             });
+
+
+            var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
+            using var scope = scopeFactory.CreateScope();
+            var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+            RecurringJob.AddOrUpdate(
+                 "SendNewPollNotification",
+                 () => notificationService.SendNewPollNotification(null),
+                 Cron.Daily
+            );
 
             //app.UseCors("CorsPolicy");
             //for default cors Policy
