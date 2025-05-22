@@ -1,8 +1,10 @@
-﻿using Mapster;
+﻿using Hangfire;
+using Mapster;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -293,7 +295,9 @@ namespace Survey.Infrastructure.implementation.Service
                     }
                 };
             var emailBody = EmailBodyBuilder.GenerateBody("EmailVerification", dict);
-            await _Email.SendEmailAsync(user.Email!, "SurveyBasket - Confirmation Mail ✅🤗", emailBody);
+            BackgroundJob.Enqueue (() => _Email.SendEmailAsync(user.Email!, "SurveyBasket - Confirmation Mail ✅🤗", emailBody));
+
+            await Task.CompletedTask;
         }
 
 

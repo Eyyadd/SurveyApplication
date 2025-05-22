@@ -12,6 +12,8 @@ namespace Survey.Domain.Interfaces.IRepository
         Task<IEnumerable<Poll?>> GetCurrentPolls(CancellationToken cancellationToken);
         Task<bool> IsTitleUnique(string title);
         Task<bool> isQuestionVotedByUser(int pollId, string userId, CancellationToken cancellationToken);
+        Task<IEnumerable<Poll?>> NewPollsAdded();
+        Task<Poll> NewPoll(int pollId);
 
     }
 }

@@ -1,10 +1,12 @@
 ﻿
 using FluentValidation;
+using Hangfire;
 using Mapster;
 using MapsterMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
@@ -47,6 +49,9 @@ namespace Survey.API.Helper
             //Excpetion Handlding
             services.AddGlobalExceptionHandler();
 
+            //Hangfire
+            services.AddHangfireConfig(configuration);
+
 
 
 
@@ -63,19 +68,30 @@ namespace Survey.API.Helper
             services.AddScoped<IPollService, PollService>();
             services.AddScoped<IQuestionService, QuestionService>();
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-            services.AddScoped<IAuthService,AuthService>();
-            services.AddScoped<IQuestionRepo,QuestionRepo>();
-            services.AddScoped<IPollRepo,PollRepo>();
-            services.AddScoped<IVoteRepo,VoteRepo>();
-            services.AddScoped<IVoteService,VoteService>();
-            services.AddScoped<IVoteResultService,VoteResultService>();
+            services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IQuestionRepo, QuestionRepo>();
+            services.AddScoped<IPollRepo, PollRepo>();
+            services.AddScoped<IVoteRepo, VoteRepo>();
+            services.AddScoped<IVoteService, VoteService>();
+            services.AddScoped<IVoteResultService, VoteResultService>();
             services.AddScoped<IEmailSender, EmailService>();
             services.AddHttpContextAccessor();
 
-            
+
         }
 
-        public static void AddAuthentication(this IServiceCollection services,IConfiguration configuration)
+        public static void AddHangfireConfig(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseSqlServerStorage(configuration.GetConnectionString("DefaultConnection")));
+
+            services.AddHangfireServer();
+        }
+
+        public static void AddAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
             //use configure in case of we don't need any validation - use addOptions in case of having validation in JWtOptions Class
             //services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
@@ -169,7 +185,7 @@ namespace Survey.API.Helper
 
 
             //for default cors Policy
-            services.AddCors(options=> options.AddDefaultPolicy(
+            services.AddCors(options => options.AddDefaultPolicy(
                 builder =>
                 {
                     builder.AllowAnyOrigin()

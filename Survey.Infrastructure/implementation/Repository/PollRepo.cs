@@ -27,9 +27,27 @@ namespace Survey.Infrastructure.implementation.Repository
             return !(await _DbContext.Polls.AnyAsync(p => p.Title == title));
         }
 
-        public async Task<bool> isQuestionVotedByUser(int pollId,string userId, CancellationToken cancellationToken)
+        public async Task<bool> isQuestionVotedByUser(int pollId, string userId, CancellationToken cancellationToken)
         {
             return await _DbContext.Votes.AnyAsync(v => v.PollId == pollId && v.UserId == userId);
+        }
+
+        public async Task<IEnumerable<Poll?>> NewPollsAdded()
+        {
+            var polls = await _DbContext.Polls
+                .Where(p => p.IsPublished && p.StartsAt == DateOnly.FromDateTime(DateTime.UtcNow))
+                .AsNoTracking()
+                .ToListAsync();
+
+            return polls;
+        }
+
+        public async Task<Poll> NewPoll(int pollId)
+        {
+            var poll = await _DbContext.Polls
+                .SingleOrDefaultAsync(p => p.Id == pollId && p.IsPublished);
+
+            return poll!;
         }
     }
 }

@@ -1,5 +1,8 @@
+using Hangfire;
 using Serilog;
 using Survey.API.Helper;
+using Hangfire.Dashboard;
+using HangfireBasicAuthenticationFilter;
 
 namespace Survey.API
 {
@@ -27,7 +30,8 @@ namespace Survey.API
 
             var Logger = app.Services.GetRequiredService<ILogger<Program>>();
 
-            try {
+            try
+            {
 
                 db.Database.Migrate();
                 Logger.LogInformation("Database Migrated Successfully");
@@ -42,10 +46,25 @@ namespace Survey.API
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
+                app.UseHangfireDashboard();
             }
 
             app.UseSerilogRequestLogging();
             app.UseHttpsRedirection();
+
+            app.UseHangfireDashboard("/Jobs", new DashboardOptions
+            {
+                Authorization =
+                [
+                    new HangfireCustomBasicAuthenticationFilter
+                    {
+                        User = app.Configuration.GetValue<string>("HangfireSettings:UserName"),
+                        Pass = app.Configuration.GetValue<string>("HangfireSettings:Password")
+
+                    }
+                ],
+                DashboardTitle = " Survey Dashboard"
+            });
 
             //app.UseCors("CorsPolicy");
             //for default cors Policy
